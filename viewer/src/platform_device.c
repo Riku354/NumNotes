@@ -138,7 +138,7 @@ ENTRY_POINT int main(int argc, char *argv[]) {
     int32_t timeout = 60000;
     if (wake != UINT32_MAX) timeout = wake > now ? (int32_t)NN_MIN(wake - now, 60000u) : 0;
     int ev = next_event(timeout);
-    if (ev == EV_HOME || home_pressed()) {
+    if (ev == EV_HOME || ev == EV_ONOFF || home_pressed()) {
       app_exit();
       break;
     }

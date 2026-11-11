@@ -299,9 +299,10 @@ void app_event(int ev, uint32_t now) {
     return;
   }
   if (ev == EV_ONOFF) {
-    store_save();
-    nn_suspend();
-    app_invalidate();
+    /* Suspending from inside an external app leaves the calculator frozen on
+     * wake-up (only a reset gets it back). Save and quit instead: Epsilon's
+     * home screen comes back and the OS handles power-off normally. */
+    app_exit();
     return;
   }
   screen_t *top = app_top();
