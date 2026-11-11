@@ -121,6 +121,20 @@ extern char _heap_start, _heap_end;
 extern char _data_section_start_flash, _data_section_start_ram;
 extern char _data_section_end_ram, _bss_section_start_ram, _bss_section_end_ram;
 
+/* Epsilon keeps its Poincare pool and tree stack inside the RAM it lends to
+ * external apps. On exit it calls init() on them, but init() skips the
+ * constructor when the box's "initialized" flag (in that same RAM) is
+ * non-zero. Our .bss and heap leave garbage there, so the flag reads true,
+ * the pool stays corrupt and the next math app (Calculation, Grapher...)
+ * crashes the calculator. Zeroing everything we used before returning makes
+ * those flags read false again, so Epsilon rebuilds the pool properly.
+ * The process stack lives above _heap_end, so this is safe to run here. */
+static void scrub_ram(void) {
+  volatile uint32_t *p = (volatile uint32_t *)&_data_section_start_ram;
+  volatile uint32_t *end = (volatile uint32_t *)&_heap_end;
+  while (p < end) *p++ = 0;
+}
+
 /* Keep both entry points global through link-time optimization: NumWorks'
  * start routine calls main, the NumNotes website's calls nn_start. */
 #define ENTRY_POINT __attribute__((used, externally_visible))
@@ -145,6 +159,7 @@ ENTRY_POINT int main(int argc, char *argv[]) {
     app_event(ev, nn_millis());
     app_render();
   }
+  scrub_ram();
   return 0;
 }
 
